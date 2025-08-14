@@ -37,8 +37,19 @@ const  dbConnected=async()=>{
 
 
   const studentsSchema=new mongoose.Schema({
-    name:String,
-    age:Number,
+    name:{
+        type:String,
+        required:[true, 'name is required'],
+        minLength:[4, 'name is 4 checter'],
+        trim:true,
+        enum:['litop', 'subornao']
+    },
+    
+    age:{
+        type:Number,
+        required:[true,'age is must be required'],
+        lowercase:true,
+    },
   })
 
   const studentsModel=mongoose.model('students', studentsSchema);
@@ -100,7 +111,11 @@ app.get('/students', async(req,res)=>{
     try{
 
         // const products=await studentsModel.find().limit(3);
-        const products=await studentsModel.find({age:{$eq:22}})
+        // const products=await studentsModel.find().sort({age:1});
+
+        const products=await studentsModel.find().sort({age:1}).select({name:1,_id:0})    ;
+    //    const products = await studentsModel.find({age:{$eq:22}}).countDocuments();
+
 
         if(products){
 
@@ -132,7 +147,7 @@ app.get('/students/:id', async(req,res)=>{
         const {id}=req.params;
 
         // const products=await studentsModel.find().limit(3);
-        // const products=await studentsModel.findOne({_id:id}).select({name:1})
+        const products=await studentsModel.findOne({_id:id}).select({name:1}).countDocuments()
 
 
         if(products){
@@ -156,6 +171,69 @@ app.get('/students/:id', async(req,res)=>{
 
 
 })
+
+//delete students
+
+app.delete('/students/:id', async(req,res)=>{
+
+   try{
+     const {id}=req.params;
+
+    const studentDelete = await studentsModel.deleteOne({_id:id})
+
+    if(studentDelete){
+        res.status(200).send({
+            success:true,
+            message:'delete success fully',
+            data:studentDelete
+        })
+    }else{
+
+        res.status(4000).send({
+            success:false,
+            mesage:'delete faild try again',
+        })
+    }
+
+}catch(err){
+
+res.status(200).send(err.message);
+
+}
+
+})
+
+//update students 
+
+app.put('/students/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const studentUpdate = await studentsModel.updateOne(
+      { _id: id },
+      { $set: { age: 500 } }
+    );
+
+    if (studentUpdate.matchedCount > 0) {
+      res.status(200).send({
+        success: true,
+        message: 'Update successful',
+        data: studentUpdate
+      });
+    } else {
+      res.status(404).send({
+        success: false,
+        message: 'Student not found or update failed'
+      });
+    }
+  } catch (err) {
+    res.status(500).send({
+      success: false,
+      message: err.message
+    });
+  }
+});
+
 
 
 app.listen(PORT, async ()=>{
